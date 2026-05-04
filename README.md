@@ -28,9 +28,9 @@ THe best season to observe each object is written in the thumbnail area. You may
 <img width="1167" height="741" alt="cata_caldwell" src="https://github.com/user-attachments/assets/835fef8c-2600-49b6-8a4c-f3ad95d90d1d" />
 
 you can edit the python file and change those lines according to your location :
-- "LATITUDE": 43.6,           # Votre latitude
-- "LIMIT_IMPOSSIBLE": 0,      # Hauteur max <= 0°
-- "LIMIT_DIFFICILE": 10       # Hauteur max <= 10° 
+-     "LATITUDE": 43.6,                             # your latitude
+-   "LIMIT_IMPOSSIBLE": 0,                          # degrees : change here if your horizon is masked
+-   "LIMIT_DIFFICILE": 20
 
 You can easily translate the script in any langage as all strings are gathered at the top of the script... Meanwhile in french ! For the catalogs of objects, an english version is already available and placed inside a python bloc of comment 
 (between 
