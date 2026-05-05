@@ -4,6 +4,7 @@ This is a python script to build a catalog of your Messier/Caldwell/RASC  object
 After the Messier, the Caldwell, the RASC catalogs, I needed to simplify all this and make a commun generic one : here it is.
 
 Simply organize your image files in a folder and add the string "M1, Mxx, C1, Cx or NGCxyz or ICabc" to the image names.
+The script is able to manage files in .jpg, .jpeg, .png, .webp, .tif, .tiff and .lnk (window shortcut to image).
 
 Place the "astro_catalog_generator.py" script and the "astro_catalog_launcher.bat" file in the same folder where the images are located. Double-click on "astro_catalog_launcher.bat", accept the Windows prompts, and it will automatically collect missing python libraries and it generates an interactive HTML contact sheet. The .bat file, of course, only runs on PC...
 If there are multiple objects in the same image, name the file with both objects (e.g.,NGC4038_NGC4039_antenna.jpg). 
