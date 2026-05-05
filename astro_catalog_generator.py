@@ -5,6 +5,7 @@
 # https://github.com/aeropic/Messier_Caldwell_RASC_catalog_generator
 # http://www.messier.seds.org/xtra/similar/rasc-ngc.html
 #
+#   V1.2 : .tif/tiff  is supported - dedicate view jpg files are created for display
 #   V1.1.1 : .tif is partly supported (thumbnail OK, zoom KO)
 #   V1.1 : syntax error in a comment fixed
 #   V1.0 : first release
@@ -775,7 +776,7 @@ CATALOGS = {
 # --- SCRIPT ---
 
 def find_image(prefix, obj_id, tech_ref):
-    valid_exts = ('.jpg', '.jpeg', '.png', '.webp', '.tif')
+    valid_exts = ('.jpg', '.jpeg', '.png', '.webp', '.tif', '.tiff', '.lnk')
     if not os.path.exists(CONFIG["SOURCE_DIR"]): return None
     
     files = [f for f in os.listdir(CONFIG["SOURCE_DIR"]) 
@@ -809,7 +810,22 @@ def get_exif_date(path):
 def make_thumbnail(src):
     if not os.path.exists(CONFIG["THUMB_DIR"]): os.makedirs(CONFIG["THUMB_DIR"])
     dest = os.path.join(CONFIG["THUMB_DIR"], f"thumb_{src}")
+    
+    # if  .tif file then generate view_file.jpg in the thumbnails dir that will be used for display
+    if src.lower().endswith(('.tif', '.tiff')):
+        view_dest = os.path.join(CONFIG["THUMB_DIR"], f"view_{os.path.splitext(src)[0]}.jpg")
+        if not os.path.exists(view_dest):
+            try:
+                with Image.open(src) as img_view:
+                    img_view = ImageOps.exif_transpose(img_view).convert("RGB")
+                    view_size = CONFIG.get("VIEW_SIZE", 1200)
+                    img_view.thumbnail((view_size, view_size), Image.Resampling.LANCZOS)
+                    img_view.save(view_dest, "JPEG", quality=85)
+            except Exception:
+                pass
+
     if os.path.exists(dest): return dest
+    
     try:
         with Image.open(src) as img:
             img = ImageOps.exif_transpose(img).convert("RGB")
@@ -828,7 +844,7 @@ def generate():
     final_json = {}
     stats = {}
     
-    # On extrait les préfixes pour le JS afin de rester synchro avec Python[cite: 1]
+    # On extrait les préfixes pour le JS afin de rester synchro avec Python
     prefixes_js = {k: v["prefix"] for k, v in CATALOGS.items()}
     
     for name, data_dict in CATALOGS.items():
@@ -908,6 +924,10 @@ def generate():
         const stats = {json.dumps(stats)};
         const prefixes = {json.dumps(prefixes_js)}; // Récupération des préfixes définis en Python
         
+        // Extraction de la config Python vers JS
+        const thumbDir = "{CONFIG['THUMB_DIR']}";
+        
+        
         let currentSeason = 'Tous';
         let scale = 1, posX = 0, posY = 0, isDragging = false, startX, startY;
         const m = document.getElementById("overlay"), mi = document.getElementById("fullImg"), t = document.getElementById('tooltip');
@@ -933,7 +953,26 @@ def generate():
                 
                 let content = obj.thumb ? `<img src="${{obj.thumb}}">` : `<div class="empty-info">${{obj.info[0]}}<br>${{obj.info[1]}}</div>`;
                 
-                // --- LOGIQUE URL TELESCOPIUS ROBUSTE ---
+                // ---  REDIRECT VIEW POUR TIF OU TIFF ---
+                let clickImg = obj.img;
+                if (obj.img && (obj.img.toLowerCase().endsWith('.tif') || obj.img.toLowerCase().endsWith('.tiff'))) {{
+                    // 1. Récupérer le nom de fichier sans l'extension
+                    let baseName = obj.img.substring(0, obj.img.lastIndexOf('.'));
+    
+                    // 2. Supprimer le préfixe "thumb_" s'il existe au début du nom
+                    if (baseName.startsWith('thumb_')) {{
+                        baseName = baseName.substring(6); // 6 est la longueur de "thumb_"
+                    }}
+    
+                    // 3. Concaténer avec le nouveau préfixe view_
+                    clickImg = thumbDir + "/view_" + baseName + ".jpg";
+                    // --- DEBUG ---
+                    console.log("Source originale (obj.img):", obj.img);
+                    console.log("Base extraite (baseName):", baseName);
+                    console.log("Chemin final généré (clickImg):", clickImg);
+                }}
+                
+                // ---  URL TELESCOPIUS RASC <==> NGC from database field(tech_ref) ---
                 let tUrl = "https://telescopius.com/deep-sky-objects/";
                 if (obj.prefix === prefixes.Messier) {{
                     tUrl += "m-" + obj.id;
@@ -946,7 +985,7 @@ def generate():
 
                 const labelText = obj.tech_ref ? `${{obj.prefix}}${{obj.id}} - ${{obj.tech_ref}}` : `${{obj.prefix}}${{obj.id}}`;
 
-                d.innerHTML = `<div class="img-box" onclick="openM('${{obj.img}}')">${{content}}</div>
+                d.innerHTML = `<div class="img-box" onclick="openM('${{clickImg}}')">${{content}}</div>
                                <div class="label" style="color:${{obj.label_color}}" onclick="window.open('${{tUrl}}', '_blank')">${{labelText}}</div>`;
                 g.appendChild(d);
             }});
