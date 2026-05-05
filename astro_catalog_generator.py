@@ -5,6 +5,7 @@
 # https://github.com/aeropic/Messier_Caldwell_RASC_catalog_generator
 # http://www.messier.seds.org/xtra/similar/rasc-ngc.html
 #
+#   V1.1 : syntax error in a comment fixed
 #   V1.0 : first release
 #============================================================================
 import os
@@ -36,7 +37,7 @@ CONFIG = {
     "THUMB_DIR": "thumbnails",                    # name of the thumbnails directory
     "OUTPUT_HTML": "astro_catalog.html",          # name of the HTML page
     "THUMB_SIZE": 100,                            # size of the square thumbnail on the HTML page (max 200x200)
-    "LATITUDE": 43.6,   ......................... # your latitude
+    "LATITUDE": 43.6,                             # your latitude
     "LIMIT_IMPOSSIBLE": 0,                        # degrees : change here if your horizon is masked
     "LIMIT_DIFFICILE": 20
 }
