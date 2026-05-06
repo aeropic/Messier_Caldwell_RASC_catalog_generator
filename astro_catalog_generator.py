@@ -875,7 +875,7 @@ def generate():
             h_max = 90 - abs(CONFIG["LATITUDE"] - dec)
             
             color = "#c9d1d9" 
-            if h_max <= CONFIG["LIMIT_IMPOSSIBLE"]: color = "#ff4d4d" 
+            if h_max <= CONFIG["LIMIT_IMPOSSIBLE"]: color = "#da3633"  #"#ff4d4d""#ff4d4d" 
             elif h_max <= CONFIG["LIMIT_DIFFICILE"]: color = "#ff9f43" 
 
             objs.append({
