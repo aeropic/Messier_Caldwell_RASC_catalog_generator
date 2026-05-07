@@ -1042,7 +1042,7 @@ def generate():
             html += `<div><strong>Élévation Max:</strong> ${{obj.h_max}}°</div>`;
             
             html += `<hr style="border:0; border-top:1px solid #444; margin:8px 0;">`;
-            html += `<div style="font-style:italic; color:#3498db; margin-top:5px;">${{obj.info[5]}}</div>`;
+            html += `<div style="font-style:italic; color:#3498db; margin-top:5px;"><strong>${{obj.info[5]}}</strong></div>`;
             
             t.innerHTML = html; t.style.display = 'block';
             let x = e.clientX + 15, y = e.clientY + 15;
