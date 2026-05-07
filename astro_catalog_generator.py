@@ -5,6 +5,7 @@
 # https://github.com/aeropic/Messier_Caldwell_RASC_catalog_generator
 # http://www.messier.seds.org/xtra/similar/rasc-ngc.html
 #
+#   V1.4 : click on empty thumbnail opens telescopius as well
 #   V1.3 : logs in cmd window during thumbnails generation
 #   V1.2 : .tif/tiff  is supported - dedicate view jpg files are created for display
 #   V1.1.1 : .tif is partly supported (thumbnail OK, zoom KO)
@@ -124,7 +125,7 @@ MESSIER_DATA = {
     42: [T["N"], S["H"], "Orion", "4.0", "85'x60'", "Nébuleuse d'Orion", -5.4, "NGC 1976"],
     43: [T["N"], S["H"], "Orion", "9.0", "20'x15'", "Nébuleuse de De Mairan", -5.2, "NGC 1982"],
     44: [T["AO"], S["H"], "Cancer", "3.1", "95'", "Amas de la Crèche", 19.7, "NGC 2632"],
-    45: [T["AO"], S["H"], "Taureau", "1.6", "110'", "Les Pléiades", 24.1, "M45"],
+    45: [T["AO"], S["H"], "Taureau", "1.6", "110'", "Les Pléiades", 24.1, "NGC 1432"],
     46: [T["AO"], S["H"], "Poupe", "6.1", "27'", "Amas de la Poupe", -14.8, "NGC 2437"],
     47: [T["AO"], S["H"], "Poupe", "4.4", "30'", "Amas de la Poupe", -14.4, "NGC 2422"],
     48: [T["AO"], S["H"], "Hydre", "5.8", "54'", "Amas de l'Hydre", -5.8, "NGC 2548"],
@@ -874,8 +875,8 @@ def generate():
             dec = info[6]
             h_max = 90 - abs(CONFIG["LATITUDE"] - dec)
             
-            color = "#c9d1d9" 
-            if h_max <= CONFIG["LIMIT_IMPOSSIBLE"]: color = "#da3633"  #"#ff4d4d""#ff4d4d" 
+            color =   "#c9d1d9" # gris très clair "#58a6ff" pour du bleu clair
+            if h_max <= CONFIG["LIMIT_IMPOSSIBLE"]: color = "#da3633"  #"#ff4d4d" 
             elif h_max <= CONFIG["LIMIT_DIFFICILE"]: color = "#ff9f43" 
 
             objs.append({
@@ -960,7 +961,8 @@ def generate():
                 d.onmousemove = (e) => showT(e, obj);
                 d.onmouseleave = () => t.style.display='none';
                 
-                let content = obj.thumb ? `<img src="${{obj.thumb}}">` : `<div class="empty-info">${{obj.info[0]}}<br>${{obj.info[1]}}</div>`;
+                // let content = obj.thumb ? `<img src="${{obj.thumb}}">` : `<div class="empty-info">${{obj.info[0]}}<br>${{obj.info[1]}}</div>`;
+                let content = obj.thumb ? `<img src="${{obj.thumb}}">` : `<div class="empty-info">${{obj.info[0]}}<br>(${{obj.info[1]}})</div>`;
                 
                 // ---  REDIRECT VIEW POUR TIF OU TIFF ---
                 let clickImg = obj.img;
@@ -981,7 +983,7 @@ def generate():
                     console.log("Chemin final généré (clickImg):", clickImg);
                 }}
                 
-                // ---  URL TELESCOPIUS RASC <==> NGC from database field(tech_ref) ---
+                // ---  URL TELESCOPIUS management (RASC <==> NGC from database field(tech_ref)) ---
                 let tUrl = "https://telescopius.com/deep-sky-objects/";
                 if (obj.prefix === prefixes.Messier) {{
                     tUrl += "m-" + obj.id;
@@ -991,11 +993,23 @@ def generate():
                     const numMatch = obj.tech_ref.match(/\\d+/);
                     tUrl += "ngc-" + (numMatch ? numMatch[0] : "");
                 }}
+                
+                // --- CLICK on thumbnail empty or not ---
+                let actionClic;
+                    if (!obj.img) {{
+                    // if no image, click obn the box opens Telescopius
+                        actionClic = `window.open('${{tUrl}}', '_blank')`;
+                    }}  else {{
+                    // if image, click opens the overlay with zoom on image
+                        actionClic = `openM('${{clickImg}}')`;
+                    }}
 
                 const labelText = obj.tech_ref ? `${{obj.prefix}}${{obj.id}} - ${{obj.tech_ref}}` : `${{obj.prefix}}${{obj.id}}`;
 
-                d.innerHTML = `<div class="img-box" onclick="openM('${{clickImg}}')">${{content}}</div>
-                               <div class="label" style="color:${{obj.label_color}}" onclick="window.open('${{tUrl}}', '_blank')">${{labelText}}</div>`;
+                
+               // action dynamic
+                d.innerHTML = `<div class="img-box" onclick="${{actionClic}}">${{content}}</div>
+               <div class="label" style="color:${{obj.label_color}}" onclick="window.open('${{tUrl}}', '_blank')">${{labelText}}</div>`;
                 g.appendChild(d);
             }});
         }}
