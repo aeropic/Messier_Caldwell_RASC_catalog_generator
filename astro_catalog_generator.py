@@ -5,6 +5,7 @@
 # https://github.com/aeropic/Messier_Caldwell_RASC_catalog_generator
 # http://www.messier.seds.org/xtra/similar/rasc-ngc.html
 #
+#   V1.4 : image box points on telescopius when no image
 #   V1.3.1 : tooltip border color light blue
 #   V1.3 : logs in cmd window during thumbnails generation
 #   V1.2 : .tif/tiff  is supported - dedicate view jpg files are created for display
@@ -992,10 +993,13 @@ def generate():
                     const numMatch = obj.tech_ref.match(/\\d+/);
                     tUrl += "ngc-" + (numMatch ? numMatch[0] : "");
                 }}
-
+                
                 const labelText = obj.tech_ref ? `${{obj.prefix}}${{obj.id}} - ${{obj.tech_ref}}` : `${{obj.prefix}}${{obj.id}}`;
 
-                d.innerHTML = `<div class="img-box" onclick="openM('${{clickImg}}')">${{content}}</div>
+                // --- GESTION DU CLIC SUR THUMBNAIL (Condition Image Catalogue) ---
+                const imgAction = obj.img ? `openM('${{clickImg}}')` : `window.open('${{tUrl}}', '_blank')`;
+
+                d.innerHTML = `<div class="img-box" onclick="${{imgAction}}">${{content}}</div>
                                <div class="label" style="color:${{obj.label_color}}" onclick="window.open('${{tUrl}}', '_blank')">${{labelText}}</div>`;
                 g.appendChild(d);
             }});
