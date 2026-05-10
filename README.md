@@ -25,11 +25,16 @@ In each catalog and especially in the Caldwell one the name of some objects are 
 - orange means the object is always low on horizon (by default < 20°)
 - red means, it will never be above your horizon
 
-THe best season to observe each object is written in the thumbnail area. You may also want to filter each catalog by season just clicking of the season button. (here summer-été is selected).
+The best season to observe each object is written in the thumbnail area. You may also want to filter each catalog by season just clicking of the season button. (here summer-été is selected).
 <img width="1167" height="741" alt="cata_caldwell" src="https://github.com/user-attachments/assets/835fef8c-2600-49b6-8a4c-f3ad95d90d1d" />
 
+To avoid being too disapointed when imaging a too small object, the tooltip siplays the size of the object in orange when both dimensions are lower than than 2'
+<img width="375" height="329" alt="smallsize" src="https://github.com/user-attachments/assets/faad9cbd-bcab-4bb8-8c8b-59e4eecda315" />
+you can edit the python file and change this value
+-    "LIMIT_SMALL_OBJECT": 120                     # arcseconds ; paint small objects size in orange
+
 you can edit the python file and change those lines according to your location :
--     "LATITUDE": 43.6,                             # your latitude
+-   "LATITUDE": 43.6,                             # your latitude
 -   "LIMIT_IMPOSSIBLE": 0,                          # degrees : change here if your horizon is masked
 -   "LIMIT_DIFFICILE": 20
 
