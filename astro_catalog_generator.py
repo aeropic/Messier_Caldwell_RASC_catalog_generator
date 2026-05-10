@@ -5,6 +5,7 @@
 # https://github.com/aeropic/Messier_Caldwell_RASC_catalog_generator
 # http://www.messier.seds.org/xtra/similar/rasc-ngc.html
 #
+#   V1.5.1 : bug fix in size display
 #   V1.5 : update of RASC objects usual name
 #   V1.4 : image box points on telescopius when no image
 #   V1.3.1 : tooltip border color light blue
@@ -1028,7 +1029,7 @@ def generate():
             html += `<div><strong>Saison:</strong> ${{obj.info[1]}}</div>`;
             html += `<div><strong>Constellation:</strong> ${{obj.info[2]}}</div>`;
             html += `<div><strong>Magnitude:</strong> ${{obj.info[3]}}</div>`;
-            html += `<div><strong>Taille:</strong> ${{obj.info[4]}}'</div>`;
+            html += `<div><strong>Taille:</strong> ${{obj.info[4]}}</div>`;
             html += `<div><strong>Déclinaison:</strong> ${{obj.info[6]}}°</div>`;
             html += `<div><strong>Élévation Max:</strong> ${{obj.h_max}}°</div>`;
             
