@@ -5,6 +5,7 @@
 # https://github.com/aeropic/Messier_Caldwell_RASC_catalog_generator
 # http://www.messier.seds.org/xtra/similar/rasc-ngc.html
 #
+#   V2.0 : rolling menus for seasons and direction selection
 #   V1.6 : display size for small object in orange (small means < 2'x2')
 #   V1.5.1 : bug fix in size display
 #   V1.5 : update of RASC objects usual name
@@ -54,8 +55,11 @@ CONFIG = {
 LANG = {
     "PAGE_TITLE": "Mon Catalogue Astro",                     # "my astro catalog"
     "UNIT_LABEL": "objets",                                  # "objects"
-    "ALL": "Tous",                                           # "All"
+    "ALL": "Toutes saisons",                                 # "All seasons"
+    "ALL_DIR": "Nord et Sud",                                # "North and South"
     "NO_DATE": "Date inconnue",                              # "unknown date"
+    "NORTH": "Nord",                                         # "North"
+    "SOUTH": "Sud",                                          # "South"
     "TYPES": {
         "N": "Nébuleuse",                                    # "nebula"
         "NP": "Néb. Planétaire",                             # "planetary nebula"
@@ -898,60 +902,117 @@ def generate():
         final_json[name] = objs
         stats[name] = f"{found_count}/{len(data_dict['data'])}"
 
+    # --- Préparation des options pour les menus déroulants ---
+    # --- Préparation des options pour les menus déroulants ---
     select_options = "".join([f'<option value="{c}" {"selected" if c == CONFIG["SELECTED_CATALOG"] else ""}>{c}</option>' for c in CATALOGS.keys()])
+    season_options = "".join([f'<option value="{val}">{val}</option>' for val in LANG["SEASONS"].values()])
+    # Nouvelles options de direction
+    dir_options = f'<option value="Tous">{LANG["ALL_DIR"]}</option><option value="{LANG["NORTH"]}">{LANG["NORTH"]}</option><option value="{LANG["SOUTH"]}">{LANG["SOUTH"]}</option>'
     limit_small = CONFIG.get("LIMIT_SMALL_OBJECT", 60)
-    html_template = f"""<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
-    <style>
-        :root {{ --case-size: {CONFIG["THUMB_SIZE"]}px; }}
-        body {{ background: #0d1117; color: #c9d1d9; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; overflow-x: hidden; }}
-        h1 {{ font-size: 2.2em; margin-bottom: 5px; color: #fff; }}
-        .stats-header {{ color: #8b949e; font-size: 1.1em; margin-bottom: 20px; }}
-        .filter-bar {{ margin-bottom: 30px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }}
-        .filter-btn {{ background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 8px 20px; border-radius: 20px; cursor: pointer; transition: 0.2s; }}
-        .filter-btn.active {{ background: #238636; border-color: #2ea043; color: #fff; }}
-        .filter-btn.active-blue {{ background: #1f6feb; border-color: #388bfd; color: #fff; }}
-        .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--case-size), 1fr)); gap: 15px; width: 100%; margin: 0 auto; }}
-        .case {{ background: #161b22; border-radius: 8px; border: 1px solid #30363d; overflow: hidden; position: relative; display: flex; flex-direction: column; }}
-        .img-box {{ width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; background: #000; cursor: pointer; overflow: hidden; }}
-        .img-box img {{ width: 100%; height: 100%; object-fit: cover; }}
-        .empty-info {{ color: #484f58; font-size: 11px; font-weight: bold; text-align: center; padding: 5px; line-height: 1.2; }}
-        .label {{ background: #21262d; padding: 8px 5px; font-weight: bold; font-size: 12px; border-top: 1px solid #30363d; cursor: pointer; transition: 0.2s; }}
-        #tooltip {{ position: fixed; display: none; background: #0d1117; border: 1px solid #3498db; border-radius: 8px; padding: 12px; z-index: 2000; text-align: left; min-width: 220px; box-shadow: 0 8px 24px #000; pointer-events: none; }}
-        #overlay {{ display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; overflow: hidden; }}
-        #fullImg {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: grab; user-select: none; max-width: 95%; max-height: 95%; transition: transform 0.05s linear; }}
-    </style></head><body>
-    <h1 id="catTitle">Catalogue</h1>
-    <div class="stats-header" id="statsText"></div>
-    <div class="filter-bar">
-        <select id="catSelect" onchange="update()" style="background:#21262d; color:#fff; border-radius:20px; padding:8px 15px; border:1px solid #30363d;">{select_options}</select>
-        <button class="filter-btn active-blue" onclick="filterS('Tous', this)">Tous</button>
-        <button class="filter-btn" onclick="filterS('Printemps', this)">Printemps</button>
-        <button class="filter-btn" onclick="filterS('Été', this)">Été</button>
-        <button class="filter-btn" onclick="filterS('Automne', this)">Automne</button>
-        <button class="filter-btn" onclick="filterS('Hiver', this)">Hiver</button>
-    </div>
-    <div class="grid" id="grid"></div>
-    <div id="tooltip"></div>
-    <div id="overlay" onclick="if(event.target===this) closeM()"><img id="fullImg"></div>
-    <script>
-        const data = {json.dumps(final_json)};
-        const stats = {json.dumps(stats)};
-        const prefixes = {json.dumps(prefixes_js)}; // Récupération des préfixes définis en Python
-        
-        // Extraction de la config Python vers JS
-        const thumbDir = "{CONFIG['THUMB_DIR']}";
-        
-        
-        let currentSeason = 'Tous';
-        let scale = 1, posX = 0, posY = 0, isDragging = false, startX, startY;
-        const m = document.getElementById("overlay"), mi = document.getElementById("fullImg"), t = document.getElementById('tooltip');
 
-        function filterS(s, btn) {{
-            currentSeason = s;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'active-blue'));
-            btn.classList.add(s === 'Tous' ? 'active-blue' : 'active');
-            update();
+    html_template = f"""<!DOCTYPE html>
+    <html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            :root {{ --case-size: {CONFIG["THUMB_SIZE"]}px; }}
+            body {{ background: #0d1117; color: #c9d1d9; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; overflow-x: hidden; }}
+            h1 {{ font-size: 2.2em; margin-bottom: 5px; color: #fff; }}
+            .stats-header {{ color: #8b949e; font-size: 1.1em; margin-bottom: 20px; }}
+            
+            /* Style unifié et permanent pour les menus déroulants avec flèche personnalisée */
+            .filter-bar {{ margin-bottom: 30px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }}
+            .filter-select {{ 
+                background: #21262d; 
+                color: #fff; 
+                border: 1px solid #388bfd; /* Bordure bleue fixe */
+                padding: 8px 35px 8px 15px; /* Augmentation du padding à droite pour la flèche */
+                border-radius: 20px; 
+                cursor: pointer; 
+                font-family: inherit;
+                font-size: 14px;
+                outline: none;
+                transition: 0.2s;
+                
+                /* Suppression de la flèche par défaut du navigateur */
+                appearance: none; 
+                -webkit-appearance: none;
+                -moz-appearance: none;
+
+                /* Ajout d'une flèche SVG personnalisée en arrière-plan */
+                background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+                background-repeat: no-repeat;
+                background-position: right 12px top 50%; /* Positionnement de la flèche */
+                background-size: 10px auto;
+            }}
+            
+            /* Pour Internet Explorer (si nécessaire) */
+            .filter-select::-ms-expand {{
+                display: none;
+            }}
+
+        /* Garde la bordure bleue et la flèche même au survol et au clic */
+        .filter-select:hover, .filter-select:focus {{ 
+            border-color: #388bfd; 
+            background-color: #2a3039; /* Léger changement de fond au survol pour le feedback */
+            box-shadow: 0 0 0 2px rgba(56, 139, 253, 0.3);
         }}
+
+            .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--case-size), 1fr)); gap: 15px; width: 100%; margin: 0 auto; }}
+            .case {{ background: #161b22; border-radius: 8px; border: 1px solid #30363d; overflow: hidden; position: relative; display: flex; flex-direction: column; }}
+            .img-box {{ width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; background: #000; cursor: pointer; overflow: hidden; }}
+            .img-box img {{ width: 100%; height: 100%; object-fit: cover; }}
+            .empty-info {{ color: #484f58; font-size: 11px; font-weight: bold; text-align: center; padding: 5px; line-height: 1.2; }}
+            .label {{ background: #21262d; padding: 8px 5px; font-weight: bold; font-size: 12px; border-top: 1px solid #30363d; cursor: pointer; transition: 0.2s; }}
+            
+            #tooltip {{ position: fixed; display: none; background: #0d1117; border: 1px solid #3498db; border-radius: 8px; padding: 12px; z-index: 2000; text-align: left; min-width: 220px; box-shadow: 0 8px 24px #000; pointer-events: none; }}
+            #overlay {{ display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; overflow: hidden; }}
+            #fullImg {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: grab; user-select: none; max-width: 95%; max-height: 95%; transition: transform 0.05s linear; }}
+        </style>
+    </head>
+    <body>
+        <h1 id="catTitle">Catalogue</h1>
+        <div class="stats-header" id="statsText"></div>
+        
+        <div class="filter-bar">
+            <select id="catSelect" class="filter-select" onchange="update()">
+                {select_options}
+            </select>
+            <select id="seasonSelect" class="filter-select" onchange="filterS(this.value)">
+                <option value="Tous">{LANG['ALL']}</option>
+                {season_options}
+            </select>
+            <select id="dirSelect" class="filter-select" onchange="filterD(this.value)">
+                {dir_options}
+            </select>
+        </div>
+
+        <div class="grid" id="grid"></div>
+        <div id="tooltip"></div>
+        <div id="overlay" onclick="if(event.target===this) closeM()"><img id="fullImg"></div>
+
+        <script>
+            const data = {json.dumps(final_json)};
+            const stats = {json.dumps(stats)};
+            const prefixes = {json.dumps(prefixes_js)};
+            const thumbDir = "{CONFIG['THUMB_DIR']}";
+            const userLat = {CONFIG['LATITUDE']}; // On injecte la latitude
+            
+            let currentSeason = 'Tous';
+            let currentDir = 'Tous'; // Nouveau filtre
+            let scale = 1, posX = 0, posY = 0, isDragging = false, startX, startY;
+            const m = document.getElementById("overlay"), mi = document.getElementById("fullImg"), t = document.getElementById('tooltip');
+
+            function filterS(s) {{
+                currentSeason = s;
+                update();
+            }}
+
+            // Nouvelle fonction de filtre de direction
+            function filterD(d) {{
+                currentDir = d;
+                update();
+            }}
 
         function update() {{
             const cat = document.getElementById('catSelect').value;
@@ -961,6 +1022,12 @@ def generate():
             
             data[cat].forEach(obj => {{
                 if (currentSeason !== 'Tous' && obj.info[1] !== currentSeason) return;
+                
+                // 2. Calcul et Filtre Direction
+                const declin = parseFloat(obj.info[6]);
+                const objDir = declin > userLat ? "{LANG['NORTH']}" : "{LANG['SOUTH']}";
+                if (currentDir !== 'Tous' && objDir !== currentDir) return;
+                
                 const d = document.createElement('div'); d.className = 'case';
                 d.onmousemove = (e) => showT(e, obj);
                 d.onmouseleave = () => t.style.display='none';
@@ -1029,7 +1096,6 @@ def generate():
             
             let s = obj.info[4] || "";
             let c = "";
-            let q = String.fromCharCode(34); 
             let threshold = {limit_small}; 
             
             let dims = s.split(/[x×]/);
@@ -1038,20 +1104,15 @@ def generate():
             for (let i = 0; i < dims.length; i++) {{
                 let d = dims[i].trim();
                 let tm = 0, ts = 0;
-                
                 let mMatch = d.match(/([0-9.]+)'($|[^'])/);
                 let sMatch = d.match(/([0-9.]+)(?:''|["])/);
-                
                 if (mMatch) tm = parseFloat(mMatch[1]);
                 if (sMatch) ts = parseFloat(sMatch[1]);
-                
                 if (!mMatch && !sMatch) {{
                     let v = parseFloat(d);
                     if (!isNaN(v)) tm = v;
                 }}
-
                 let total = (tm * 60) + ts;
-
                 if (total >= threshold || total === 0) {{
                     isSmall = false;
                     break;
@@ -1060,12 +1121,27 @@ def generate():
 
             if (isSmall) c = ' style="color:orange;"';
 
+            // --- Logique Nord/Sud via LANG ---
+            // --- Logique Nord/Sud et Couleurs ---
+            const lat = {CONFIG["LATITUDE"]};
+            const declin = parseFloat(obj.info[6]);
+            const isNorth = declin > lat;
+            const direction = isNorth ? "{LANG['NORTH']}" : "{LANG['SOUTH']}";
+            
+            // Couleurs demandées : Nord (Bleu), Sud (Jaune)
+            const badgeColor = isNorth ? "#3498db" : "#f1c40f";
+            const badgeBorder = isNorth ? "1px solid #3498db" : "1px solid #f1c40f";
+
             html += `<div><strong>Type:</strong> ${{obj.info[0]}}</div>`;
             html += `<div><strong>Saison:</strong> ${{obj.info[1]}}</div>`;
             html += `<div><strong>Constellation:</strong> ${{obj.info[2]}}</div>`;
             html += `<div><strong>Magnitude:</strong> ${{obj.info[3]}}</div>`;
             html += `<div${{c}}><strong>Taille:</strong> ${{s}}</div>`;
-            html += `<div><strong>Déclinaison:</strong> ${{obj.info[6]}}°</div>`;
+            
+            // Ligne Déclinaison : texte standard + badge coloré
+            html += `<div><strong>Déclinaison:</strong> <span style="font-weight:bold; color:#c9d1d9;">${{obj.info[6]}}°</span> `;
+            html += `<span style="font-size:9px; background:#21262d; color:${{badgeColor}}; padding:1px 4px; border-radius:3px; border:${{badgeBorder}}; margin-left:5px; vertical-align:middle; font-weight:bold;">${{direction}}</span></div>`;
+            
             html += `<div><strong>Élévation Max:</strong> ${{obj.h_max}}°</div>`;
             
             html += `<hr style="border:0; border-top:1px solid #444; margin:8px 0;">`;
