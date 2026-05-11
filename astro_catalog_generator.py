@@ -5,6 +5,7 @@
 # https://github.com/aeropic/Messier_Caldwell_RASC_catalog_generator
 # http://www.messier.seds.org/xtra/similar/rasc-ngc.html
 #
+#   V2.1 : season is displayed only when all seasons is selected
 #   V2.0 : rolling menus for seasons and direction selection
 #   V1.6 : display size for small object in orange (small means < 2'x2')
 #   V1.5.1 : bug fix in size display
@@ -902,12 +903,13 @@ def generate():
         final_json[name] = objs
         stats[name] = f"{found_count}/{len(data_dict['data'])}"
 
-    # --- Préparation des options pour les menus déroulants ---
+    
     # --- Préparation des options pour les menus déroulants ---
     select_options = "".join([f'<option value="{c}" {"selected" if c == CONFIG["SELECTED_CATALOG"] else ""}>{c}</option>' for c in CATALOGS.keys()])
     season_options = "".join([f'<option value="{val}">{val}</option>' for val in LANG["SEASONS"].values()])
     # Nouvelles options de direction
     dir_options = f'<option value="Tous">{LANG["ALL_DIR"]}</option><option value="{LANG["NORTH"]}">{LANG["NORTH"]}</option><option value="{LANG["SOUTH"]}">{LANG["SOUTH"]}</option>'
+    
     limit_small = CONFIG.get("LIMIT_SMALL_OBJECT", 60)
 
     html_template = f"""<!DOCTYPE html>
@@ -1031,9 +1033,11 @@ def generate():
                 const d = document.createElement('div'); d.className = 'case';
                 d.onmousemove = (e) => showT(e, obj);
                 d.onmouseleave = () => t.style.display='none';
-            
+                
                 // thumbnail area text (type and season)
-                let content = obj.thumb ? `<img src="${{obj.thumb}}">` : `<div class="empty-info">${{obj.info[0]}}<br>(${{obj.info[1]}})</div>`;
+                // season to be displayed only when currentseason == "Tous"
+                let displaySeason = currentSeason === 'Tous' ? `<br>(${{obj.info[1]}})` : '';
+                let content = obj.thumb ? `<img src="${{obj.thumb}}">` : `<div class="empty-info">${{obj.info[0]}}${{displaySeason}}</div>`;
                 
                 // ---  REDIRECT VIEW POUR TIF OU TIFF ---
                 let clickImg = obj.img;
