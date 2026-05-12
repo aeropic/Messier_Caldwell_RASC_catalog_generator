@@ -39,7 +39,9 @@ And the direction of observation is also displayed in the tooltip.
 
 
 To avoid being too disapointed when imaging a too small object, the tooltip displays the size of the object in orange when both dimensions are lower than than 2'
+
 <img width="375" height="329" alt="smallsize" src="https://github.com/user-attachments/assets/faad9cbd-bcab-4bb8-8c8b-59e4eecda315" />
+
 you can edit the python file and change this value
 -    "LIMIT_SMALL_OBJECT": 120                     # arcseconds ; paint small objects size in orange
 
