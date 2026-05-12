@@ -1,4 +1,4 @@
-# Messier_Caldwell_RASC_OMEARA_catalog_generator
+# Messier_Caldwell_RASC_O'Meara_catalog_generator
 This is a python script to build a catalog of your Messier/Caldwell/RASC  objects astrophotographies
 
 After the Messier, the Caldwell, the RASC catalogs, I needed to simplify all this and make a commun generic one : here it is.
