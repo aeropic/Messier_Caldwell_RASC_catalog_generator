@@ -24,7 +24,8 @@ If you want to get more details, reference of each object (eg C42) is clickable 
 
 To switch between Messier/Caldwell/RASC/OMEARA catalogs just select the required catalog from the menu bar.
 you can also filter by type of objects (Nebula, galaxies, clusters and others)
-<img width="1307" height="690" alt="nebu" src="https://github.com/user-attachments/assets/4151d09a-49de-4be1-97fe-0f72126a35ec" />
+
+<img width="1276" height="699" alt="nebu" src="https://github.com/user-attachments/assets/9d131ef7-6bf4-497f-b306-160a5f8fe396" />
 
 
 In each catalog and especially in the Caldwell and O'Meara the name of some objects are painted in orange or red.
