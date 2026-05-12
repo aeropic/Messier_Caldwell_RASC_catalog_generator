@@ -1,9 +1,10 @@
 # Messier_Caldwell_RASC_O'Meara_catalog_generator
 This is a python script to build a catalog of your Messier/Caldwell/RASC/O'Meara  objects astrophotographies
 
-After the Messier, the Caldwell, the RASC catalogs, I needed to simplify all this and make a commun generic one : here it isincluding O'meara hidden treasures and secret deep lists.
-This project is a technical tool for observers. For detailed descriptions, history, and charts of these objects, users are highly encouraged to purchase Stephen James O'Meara's books 'Hidden Treasures' and 'The Secret Deep' published by Cambridge University Press.
+After the Messier, the Caldwell, the RASC catalogs, I needed to simplify all this and make a commun generic one : here it is including O'meara's "hidden treasures" and "secret deep" lists.
+This project is a technical tool for observers. For detailed descriptions, history, and charts of the O'Meara objects, users are highly encouraged to purchase Stephen James O'Meara's books 'Hidden Treasures' and 'The Secret Deep' published by Cambridge University Press.
 
+usage:
 Simply organize your image files in a folder and add the string "M1, Mxx, C1, Cx or NGCxyz or ICabc" to the image names.
 The script is able to manage files in .jpg, .jpeg, .png, .webp, .tif, .tiff and .lnk (window shortcut to image).
 
