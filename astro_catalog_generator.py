@@ -7,7 +7,8 @@
 # https://www.catchersofthelight.com/astrophotography-hidden-treasures-list.aspx
 # https://app.astrobin.com/u/GaryI?collection=677&i=esls3b#gallery
 #
-#   V4.0 : added srlection of todo objects (red heart) and export of TODO.txt
+#   V4.0.1 : added fex comments all in english
+#   V4.0 : added selection of todo objects (red heart) and export of TODO.txt
 #   V3.1 : huge mod in hidden treasures!
 #   V3.0 : added O'Meara lists (secret deep and hidden treasures)
 #   V2.1 : season is displayed only when all seasons is selected
@@ -60,6 +61,7 @@ CONFIG = {
 }
 
 LANG = {
+    "CATALOG": "mon catalogue",                              # "my catalog"
     "PAGE_TITLE": "Mon Catalogue Astro",                     # "my astro catalog"
     "UNIT_LABEL": "objets",                                  # "objects"
     "ALL": "Toutes saisons",                                 # "All seasons"
@@ -83,10 +85,10 @@ LANG = {
         "AN": "Amas + Néb."                                  # " Nebula and cluster"
     },
     "FAMILIES_LABELS": {
-        "ALL": "Tous objets",
-        "NEB": "Nébuleuses",
+        "ALL": "Tous objets",                               # "all objects"
+        "NEB": "Nébuleuses",                                # "nebula"
         "GAL": "Galaxies",
-        "CLU": "Amas et divers"
+        "CLU": "Amas et divers"                             # "clusters and others"
     },
     "SEASONS": {"P": "Printemps", "E": "Été", "A": "Automne", "H": "Hiver"}      # {"P": "Spring", "E": "Summer", "A": "Automn", "H": "Winter"}
 }
@@ -676,27 +678,35 @@ TODO_FILE = "TODO.txt"
 
 # --- SCRIPT ---
 
+import os
+import re
+import json
+from datetime import datetime
+from PIL import Image, ImageOps
+
 def find_image(prefix, obj_id, tech_ref):
-    """Recherche une image correspondante dans le dossier source"""
+    """Search for a matching image in the source directory based on technical references or IDs"""
     valid_exts = ('.jpg', '.jpeg', '.png', '.webp', '.tif', '.tiff', '.lnk')
     if not os.path.exists(CONFIG["SOURCE_DIR"]): return None
     
+    # Pre-filter files with valid extensions and exclude thumbnails
     files = [f for f in os.listdir(CONFIG["SOURCE_DIR"]) 
              if f.lower().endswith(valid_exts) and "_thumb" not in f]
 
     if tech_ref:
-        # Capture le type et le numéro
+        # Search by technical designation (e.g., NGC 7000, IC 434)
+        # Captures the catalog type and the object number
         match = re.search(r"(NGC|IC|SH2|Mel|WNC|M|Barnard|vdB)\s?(\d+)", tech_ref, re.IGNORECASE)
         if match:
             a_type, a_num = match.group(1), match.group(2)
-            # Ajout de [_ \-\.]? pour gérer les séparateurs après le type
-            # Le lookahead (?!\d) est conservé
+            # Regex handles various separators between type and number
+            # Negative lookahead (?!\d) ensures we don't match NGC 1 if the file is NGC 12
             pattern = rf"{a_type}[_ \-\s]?{a_num}(?!\d)"
             for filename in files:
                 if re.search(pattern, filename, re.IGNORECASE):
                     return filename
 
-    # Recherche par prefix + obj_id
+    # Fallback search: match using catalog prefix + object ID
     pattern_id = rf"(^|[_ \-\.]){prefix}[_ \-\s]?{obj_id}(?!\d)"
     for filename in files:
         if re.search(pattern_id, filename, re.IGNORECASE):
@@ -705,26 +715,29 @@ def find_image(prefix, obj_id, tech_ref):
     return None
     
 def get_exif_date(path):
-    """Récupère la date de prise de vue ou de modification"""
+    """Extract capture date from EXIF or fallback to file modification date"""
     try:
         with Image.open(path) as img:
             exif = img._getexif()
+            # Tag 306 corresponds to DateTime
             if exif and 306 in exif:
                 return datetime.strptime(exif[306], "%Y:%m:%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
     except: pass
+    # Default to filesystem modification time if EXIF is missing or unreadable
     return datetime.fromtimestamp(os.path.getmtime(path)).strftime("%d/%m/%Y %H:%M")
 
 def make_thumbnail(src):
-    """Génère une miniature carrée et convertit les TIF pour l'affichage"""
+    """Generate a square thumbnail and convert TIF files for web display"""
     if not os.path.exists(CONFIG["THUMB_DIR"]): os.makedirs(CONFIG["THUMB_DIR"])
     dest = os.path.join(CONFIG["THUMB_DIR"], f"thumb_{src}")
     
-    # if  .tif file then generate view_file.jpg in the thumbnails dir that will be used for display
+    # Handle heavy TIF files: generate a lightweight JPG 'view' version for the lightbox
     if src.lower().endswith(('.tif', '.tiff')):
         view_dest = os.path.join(CONFIG["THUMB_DIR"], f"view_{os.path.splitext(src)[0]}.jpg")
         if not os.path.exists(view_dest):
             try:
                 with Image.open(src) as img_view:
+                    # Auto-rotate based on EXIF and convert to RGB (strips Alpha/CMYK)
                     img_view = ImageOps.exif_transpose(img_view).convert("RGB")
                     view_size = CONFIG.get("VIEW_SIZE", 1200)
                     img_view.thumbnail((view_size, view_size), Image.Resampling.LANCZOS)
@@ -735,6 +748,7 @@ def make_thumbnail(src):
     if os.path.exists(dest): return dest
     
     try:
+        # Generate the square thumbnail using a center-crop approach
         with Image.open(src) as img:
             img = ImageOps.exif_transpose(img).convert("RGB")
             w, h = img.size
@@ -750,33 +764,35 @@ def make_thumbnail(src):
     except: return src
     
 def load_todo_list():
-    """Charge la liste des objets marqués depuis TODO.txt"""
+    """Load the list of marked objects from TODO.txt (JSON format)"""
     if not os.path.exists(TODO_FILE): return {}
     try:
         with open(TODO_FILE, "r", encoding="utf-8") as f:
             content = f.read().strip()
             return json.loads(content) if content else {}
     except Exception as e:
-        print(f"Erreur lecture TODO.txt : {e}")
+        print(f"Error reading TODO.txt : {e}")
         return {}
         
 def generate():
-    """Génère le fichier HTML final"""
+    """Main function to process data and generate the HTML gallery"""
     final_json = {}
     stats = {}
     
-    todo_list = load_todo_list() # Charger au début le fichier des objets TODO
+    # Load marked objects at the start to flag them in the UI
+    todo_list = load_todo_list() 
     
-    # On extrait les préfixes pour le JS afin de rester synchro avec Python
+    # Extract prefixes for JS to ensure synchronization between Python logic and Frontend
     prefixes_js = {k: v["prefix"] for k, v in CATALOGS.items()}
     
     for name, data_dict in CATALOGS.items():
-        # Récupérer les IDs marqués pour ce catalogue précis (ex: "Messier")
+        # Get marked IDs for this specific catalog (e.g., "Messier")
         marked_ids = todo_list.get(name, [])
         
         objs = []
         found_count = 0
         prefix = data_dict["prefix"]
+        # Natural sort for IDs (handles numeric strings correctly: 1, 2, 10 instead of 1, 10, 2)
         keys = sorted(data_dict["data"].keys(), key=lambda x: (int(re.sub(r'\D', '', str(x))), str(x)))
         
         print(" ")
@@ -793,12 +809,14 @@ def generate():
                 found_count += 1
                 thumb, date = make_thumbnail(img_file), get_exif_date(img_file)
             
+            # Visibility calculation: max altitude based on observer latitude and object declination
             dec = info[6]
             h_max = 90 - abs(CONFIG["LATITUDE"] - dec)
             
-            color = "#c9d1d9" 
-            if h_max <= CONFIG["LIMIT_IMPOSSIBLE"]: color = "#da3633" 
-            elif h_max <= CONFIG["LIMIT_DIFFICILE"]: color = "#ff9f43" 
+            # Determine color coding based on observation difficulty
+            color = "#c9d1d9" # Default
+            if h_max <= CONFIG["LIMIT_IMPOSSIBLE"]: color = "#da3633" # Red
+            elif h_max <= CONFIG["LIMIT_DIFFICILE"]: color = "#ff9f43" # Orange
 
             objs.append({
                 "id": k, 
@@ -817,12 +835,12 @@ def generate():
         stats[name] = f"{found_count}/{len(data_dict['data'])}"
 
     
-    # --- Préparation des options pour les menus déroulants ---
+    # --- UI Component Preparation (Dropdown menus) ---
     select_options = "".join([f'<option value="{c}" {"selected" if c == CONFIG["SELECTED_CATALOG"] else ""}>{c}</option>' for c in CATALOGS.keys()])
     season_options = "".join([f'<option value="{val}">{val}</option>' for val in LANG["SEASONS"].values()])
     dir_options = f'<option value="Tous">{LANG["ALL_DIR"]}</option><option value="{LANG["NORTH"]}">{LANG["NORTH"]}</option><option value="{LANG["SOUTH"]}">{LANG["SOUTH"]}</option>'
 
-    # Construction dynamique des familles depuis LANG
+    # Dynamic family construction from LANG dictionary
     family_options = f"""
         <option value="Tous">{LANG['FAMILIES_LABELS']['ALL']}</option>
         <option value="Nébuleuse">{LANG['FAMILIES_LABELS']['NEB']}</option>
@@ -842,12 +860,12 @@ def generate():
             h1 {{ font-size: 2.2em; margin-bottom: 5px; color: #fff; }}
             .stats-header {{ color: #8b949e; font-size: 1.1em; margin-bottom: 20px; }}
             
-            /* Style unifié et permanent pour les menus déroulants avec flèche personnalisée */
+            /* Unified filter bar style with custom arrow */
             .filter-bar {{ margin-bottom: 30px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }}
             .filter-select {{ 
                 background: #21262d; 
                 color: #fff; 
-                border: 1px solid #388bfd; /* Bordure bleue fixe */
+                border: 1px solid #388bfd; /* Fixed blue border */
                 padding: 8px 35px 8px 15px; 
                 border-radius: 20px; 
                 cursor: pointer; 
@@ -870,7 +888,7 @@ def generate():
                 box-shadow: 0 0 0 2px rgba(56, 139, 253, 0.3);
             }}
 
-            /* Style spécifique bouton export - Discret et fixé en haut à droite */
+            /* Export button - Fixed top right */
             .btn-export {{ 
                 position: fixed; top: 10px; right: 10px; z-index: 1000;
                 background: #161b22; border: 1px solid #30363d; color: #8b949e;
@@ -882,7 +900,7 @@ def generate():
             .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--case-size), 1fr)); gap: 15px; width: 100%; margin: 0 auto; }}
             .case {{ background: #161b22; border-radius: 8px; border: 1px solid #30363d; overflow: hidden; position: relative; display: flex; flex-direction: column; }}
             
-            /* Style pour le coeur TODO */
+            /* Heart icon for TODO items */
             .todo-heart {{ 
                 position: absolute; top: 5px; right: 8px; 
                 color: #ff4d4d; font-size: 22px; cursor: pointer; 
@@ -901,7 +919,7 @@ def generate():
         </style>
     </head>
     <body>
-        <h1 id="catTitle">Catalogue</h1>
+        <h1 id="catTitle">{LANG['CATALOG']}</h1>
         <div class="stats-header" id="statsText"></div>
         
         <div class="filter-bar">
@@ -932,12 +950,12 @@ def generate():
             const thumbDir = "{CONFIG['THUMB_DIR']}";
             const userLat = {CONFIG['LATITUDE']}; 
             
-            // INITIALISATION : Fusion systématique fichier TODO.txt (Python) -> localStorage (Navigateur)
+            // INITIALIZATION: Sync TODO.txt (Python) with localStorage (Browser)
             let localTodo = JSON.parse(localStorage.getItem('astro_todo')) || {{}};
             for (let cat in data) {{
                 if (!localTodo[cat]) localTodo[cat] = [];
                 data[cat].forEach(obj => {{
-                    // Si marqué dans le fichier mais absent du cache navigateur, on l'ajoute
+                    // If marked in the file but missing from browser cache, add it
                     if (obj.todo && !localTodo[cat].includes(obj.id)) {{
                         localTodo[cat].push(obj.id);
                     }}
@@ -945,8 +963,7 @@ def generate():
             }}
             localStorage.setItem('astro_todo', JSON.stringify(localTodo));
 
-           // Mapping des familles avec les types abrégés
-           // Correction de la logique de filtrage par famille en utilisant les traductions réelles
+            // Family mapping using abbreviated types from LANG
             const FAMILIES = {{
                 "Nébuleuse": [
                     "{LANG['TYPES']['N']}", "{LANG['TYPES']['NP']}", "{LANG['TYPES']['NS']}", 
@@ -971,7 +988,7 @@ def generate():
             function filterD(d) {{ currentDir = d; update(); }}
             function filterF(f) {{ currentFamily = f; update(); }}
 
-            // Téléchargement du fichier TODO.txt
+            // Trigger download of the TODO state as a text file
             function exportTodo() {{
                 const blob = new Blob([JSON.stringify(localTodo, null, 4)], {{type: 'text/plain'}});
                 const url = window.URL.createObjectURL(blob);
@@ -982,7 +999,7 @@ def generate():
                 window.URL.revokeObjectURL(url);
             }}
 
-            // Toggle Coeur sur Clic Droit
+            // Toggle Heart status via Right Click
             function toggleHeart(e, catName, objId) {{
                 e.preventDefault(); 
                 if (!localTodo[catName]) localTodo[catName] = [];
@@ -998,7 +1015,7 @@ def generate():
                 const cat = document.getElementById('catSelect').value;
                 const g = document.getElementById('grid'); 
                 g.innerHTML = '';
-                document.getElementById('catTitle').innerText = "Catalogue " + cat;
+                document.getElementById('catTitle').innerText = "{LANG['CATALOG']} " + cat;
                 document.getElementById('statsText').innerText = "(" + stats[cat] + ")";
                 
                 data[cat].forEach(obj => {{
@@ -1007,7 +1024,8 @@ def generate():
                     const objSeason = obj.info[1].trim();
                     const declin = parseFloat(obj.info[6]);
                     const objDir = declin > userLat ? "{LANG['NORTH']}" : "{LANG['SOUTH']}";
-                   // --- LOGIQUE FILTRE FAMILLE  ---
+                    
+                    // Apply filters: Family, Season, and Direction
                     if (currentFamily !== 'Tous' && !(FAMILIES[currentFamily] && FAMILIES[currentFamily].includes(objType))) return;
                     if (currentSeason !== 'Tous' && objSeason !== currentSeason) return;
                     if (currentDir !== 'Tous' && objDir !== currentDir) return;
@@ -1017,14 +1035,13 @@ def generate():
                     d.onmouseleave = () => t.style.display='none';
                     d.oncontextmenu = (e) => toggleHeart(e, cat, obj.id);
                     
-                    // Utilisation de localTodo (fusionné) pour l'affichage
                     const isTodo = localTodo[cat] && localTodo[cat].includes(obj.id);
                     const heart = isTodo ? '<div class="todo-heart">❤</div>' : '';
 
                     let displaySeason = currentSeason === 'Tous' ? `<br>(${{objSeason}})` : '';
                     let content = obj.thumb ? `<img src="${{obj.thumb}}">` : `<div class="empty-info">${{objType}}${{displaySeason}}</div>`;
                     
-                    // --- REDIRECT VIEW POUR TIF OU TIFF ---
+                    // Redirect to the generated high-quality JPG 'view' for TIF/TIFF images
                     let clickImg = obj.img;
                     if (obj.img && (obj.img.toLowerCase().endsWith('.tif') || obj.img.toLowerCase().endsWith('.tiff'))) {{
                         let baseName = obj.img.substring(0, obj.img.lastIndexOf('.'));
@@ -1032,14 +1049,14 @@ def generate():
                         clickImg = thumbDir + "/view_" + baseName + ".jpg";
                     }}
                     
-                    // ---  URL TELESCOPIUS management (RASC/Omeara <==> NGC/IC from database field(tech_ref)) ---
+                    // --- URL TELESCOPIUS logic ---
                     let tUrl = "https://telescopius.com/deep-sky-objects/";
                     if (obj.prefix === prefixes.Messier) {{
                         tUrl += "m-" + obj.id;
                     }} else if (obj.prefix === prefixes.Caldwell) {{
                         tUrl += "c-" + obj.id;
                     }} else if (obj.prefix === prefixes.RASC || obj.prefix === prefixes["O'Meara"]) {{
-                        // Extraction spécifique du numéro associé au catalogue pour éviter le "2" de "Sh2"                                                                                                               
+                        // Regex specific to extraction of the object number within catalogs like RASC
                         const regex = /(?:NGC|IC|SH2|BARNARD|VDB)[_ \-]?(\d+)/i;
                         const match = obj.tech_ref.match(regex);
                         const idNum = match ? match[1] : ""; 
@@ -1060,6 +1077,7 @@ def generate():
                 }});
             }}
 
+            // Lightbox functionality: Open, Zoom (Wheel), and Pan (Drag)
             function openM(s) {{ if(!s) return; scale = 1; posX = 0; posY = 0; mi.src = s; m.style.display = "flex"; updateTransform(); }}
             function closeM() {{ m.style.display = "none"; }}
             function updateTransform() {{ mi.style.transform = `translate(calc(-50% + ${{posX}}px), calc(-50% + ${{posY}}px)) scale(${{scale}})`; }}
@@ -1069,7 +1087,7 @@ def generate():
             window.addEventListener('mousemove', e => {{ if (isDragging) {{ posX = e.clientX - startX; posY = e.clientY - startY; updateTransform(); }} }});
             window.addEventListener('mouseup', () => isDragging = false);
 
-            // show ToolTip
+            // Display Tooltip with detailed object data
             function showT(e, obj) {{
                 let html = "";
                 if (obj.img) {{
@@ -1084,6 +1102,7 @@ def generate():
                 let dims = s.split(/[x×]/);
                 let isSmall = dims.length > 0;
 
+                // Detect small objects for visual highlighting (Orange color if below threshold)
                 for (let i = 0; i < dims.length; i++) {{
                     let d = dims[i].trim();
                     let tm = 0, ts = 0;
@@ -1117,6 +1136,7 @@ def generate():
                 
                 t.innerHTML = html; t.style.display = 'block';
                 let x = e.clientX + 15, y = e.clientY + 15;
+                // Collision detection with window edges for the tooltip
                 if (x + 250 > window.innerWidth) x = e.clientX - t.offsetWidth - 15;
                 if (y + t.offsetHeight > window.innerHeight) y = e.clientY - t.offsetHeight - 15;
                 t.style.left = x + 'px'; t.style.top = y + 'px';
