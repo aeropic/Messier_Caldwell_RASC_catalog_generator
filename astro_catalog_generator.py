@@ -1,8 +1,8 @@
 #=============================================================================
 #                          (c) AEROPIC 2026
-#           all in one Messier/Caldwell/RASC catalog generator
+#           all in one Messier/Caldwell/RASC/O'Meara catalog generator
 #  
-# https://github.com/aeropic/Messier_Caldwell_RASC_catalog_generator
+# https://github.com/aeropic/Messier_Caldwell_RASC_OMeara_catalog_generator
 # http://www.messier.seds.org/xtra/similar/rasc-ngc.html
 # https://www.catchersofthelight.com/astrophotography-hidden-treasures-list.aspx
 # https://app.astrobin.com/u/GaryI?collection=677&i=esls3b#gallery
