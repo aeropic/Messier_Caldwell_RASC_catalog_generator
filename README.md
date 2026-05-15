@@ -68,7 +68,7 @@ When preparing some observations sessions, it may be usefull to tag the objects 
 Once done, the note will appear in tooltip
 <img width="1029" height="681" alt="cata_note" src="https://github.com/user-attachments/assets/f060caad-9947-4c6c-a1c6-cc2f80ee3ebd" />
 
-In addition, to increase visibility, objects tagged and with a note will appear with a filled heart while objects tagged but without note will be displayed witha hollow heart.
+In addition, to increase visibility, objects tagged and with a note will appear with a filled heart while objects tagged but without note will be displayed with a hollow heart.
 
 <img width="458" height="307" alt="cata_hollow_heart" src="https://github.com/user-attachments/assets/fc3e8556-d3f7-4038-8d8b-669e651be1f4" />
 
