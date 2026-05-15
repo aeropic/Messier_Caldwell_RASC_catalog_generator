@@ -74,6 +74,8 @@ LANG = {
     "NO_DATE": "Date inconnue",                              # "unknown date"
     "NORTH": "Nord",                                         # "North"
     "SOUTH": "Sud",                                          # "South"
+    "PROMPT_LABEL": "Entrez une description optionnelle :",  # "Enter an optional description:"
+    "VALIDATE": "Valider",                                   # "Validate"
     "TYPES": {
         "N": "Nébuleuse",                                    # "nebula"
         "NP": "Néb. Planétaire",                             # "planetary nebula"
@@ -87,14 +89,14 @@ LANG = {
         "EN": "Néb. Émission",                               # "Emission Nebula"
         "RN": "Néb. Réflexion",                              # "reflection nebula 
         "E/RN": "Néb. Ém./Réf.",                             # " emissin and reflexion nebula"
-        "N+C": "Amas + Néb.",                                  # " Nebula and cluster"
+        "N+C": "Amas + Néb.",                                # " Nebula and cluster"
         "QSR": "Qasar"
     },
     "FAMILIES_LABELS": {
         "ALL": "Tous objets",                               # "all objects"
-        "NEB": "Nébuleuses",                                # "nebula"
+        "NEB": "Nébuleuses",                                 # "nebula"
         "GAL": "Galaxies",
-        "CLU": "Amas et divers"                             # "clusters and others"
+        "CLU": "Amas et divers"                              # "clusters and others"
     },
     "SEASONS": {"P": "Printemps", "E": "Été", "A": "Automne", "H": "Hiver"},      # {"P": "Spring", "E": "Summer", "A": "Automn", "H": "Winter"},
     "TOOLTIP_LABELS": {
@@ -888,7 +890,7 @@ def generate():
             .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--case-size), 1fr)); gap: 15px; width: 100%; margin: 0 auto; }}
             .case {{ background: #161b22; border-radius: 8px; border: 1px solid #30363d; overflow: hidden; position: relative; display: flex; flex-direction: column; }}
             
-            /* Gestion des coeurs - Taille identique */
+            /* Hearts handling - same size empty or full */
             .todo-heart {{ 
                 position: absolute; top: 5px; right: 8px; 
                 font-size: 20px; z-index: 10; 
@@ -898,7 +900,7 @@ def generate():
             }}
             .todo-heart.no-comment {{ 
                 color: transparent;
-                -webkit-text-stroke: 1.5px #ff4d4d;
+                -webkit-text-stroke: 1.5px #ff4d4d;  // this makes the heart hollow
             }}
 
             .img-box {{ width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; background: #000; cursor: pointer; overflow: hidden; }}
@@ -941,10 +943,10 @@ def generate():
 
         <dialog id="customPrompt">
             <form method="dialog" id="promptForm">
-                <label>Entrez une description optionnelle :</label>
+                <label>{LANG['PROMPT_LABEL']}</label>
                 <input type="text" id="promptInput" autocomplete="off">
                 <br>
-                <button type="submit">Valider</button>
+                <button type="submit">{LANG['VALIDATE']}</button>
             </form>
         </dialog>
 
@@ -1146,4 +1148,5 @@ def generate():
     
     with open(CONFIG["OUTPUT_HTML"], "w", encoding="utf-8") as f: f.write(html_template)
 
-if __name__ == "__main__": generate()
+if __name__ == "__main__":
+    generate()
