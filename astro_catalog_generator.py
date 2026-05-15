@@ -7,6 +7,7 @@
 # https://www.catchersofthelight.com/astrophotography-hidden-treasures-list.aspx
 # https://app.astrobin.com/u/GaryI?collection=677&i=esls3b#gallery
 #
+#   V4.4 : hollow heart when no note 
 #   V4.3 : a free comment can be added when loving an object. 
 #          TODO.txt can be edited as well to manually add single line comments
 #   V4.2 : tooltip labels in LANG dictionnary
@@ -722,12 +723,9 @@ def find_image(prefix, obj_id, tech_ref):
 
     if tech_ref:
         # Search by technical designation (e.g., NGC 7000, IC 434)
-        # Captures the catalog type and the object number
         match = re.search(r"(NGC|IC|SH2|Mel|WNC|M|Barnard|vdB)\s?(\d+)", tech_ref, re.IGNORECASE)
         if match:
             a_type, a_num = match.group(1), match.group(2)
-            # Regex handles various separators between type and number
-            # Negative lookahead (?!\d) ensures we don't match NGC 1 if the file is NGC 12
             pattern = rf"{a_type}[_ \-\s]?{a_num}(?!\d)"
             for filename in files:
                 if re.search(pattern, filename, re.IGNORECASE):
@@ -746,11 +744,9 @@ def get_exif_date(path):
     try:
         with Image.open(path) as img:
             exif = img._getexif()
-            # Tag 306 corresponds to DateTime
             if exif and 306 in exif:
                 return datetime.strptime(exif[306], "%Y:%m:%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
     except: pass
-    # Default to filesystem modification time if EXIF is missing or unreadable
     return datetime.fromtimestamp(os.path.getmtime(path)).strftime("%d/%m/%Y %H:%M")
 
 def make_thumbnail(src):
@@ -758,13 +754,11 @@ def make_thumbnail(src):
     if not os.path.exists(CONFIG["THUMB_DIR"]): os.makedirs(CONFIG["THUMB_DIR"])
     dest = os.path.join(CONFIG["THUMB_DIR"], f"thumb_{src}")
     
-    # Handle heavy TIF files: generate a lightweight JPG 'view' version for the lightbox
     if src.lower().endswith(('.tif', '.tiff')):
         view_dest = os.path.join(CONFIG["THUMB_DIR"], f"view_{os.path.splitext(src)[0]}.jpg")
         if not os.path.exists(view_dest):
             try:
                 with Image.open(src) as img_view:
-                    # Auto-rotate based on EXIF and convert to RGB (strips Alpha/CMYK)
                     img_view = ImageOps.exif_transpose(img_view).convert("RGB")
                     view_size = CONFIG.get("VIEW_SIZE", 1200)
                     img_view.thumbnail((view_size, view_size), Image.Resampling.LANCZOS)
@@ -775,7 +769,6 @@ def make_thumbnail(src):
     if os.path.exists(dest): return dest
     
     try:
-        # Generate the square thumbnail using a center-crop approach
         with Image.open(src) as img:
             img = ImageOps.exif_transpose(img).convert("RGB")
             w, h = img.size
@@ -814,9 +807,7 @@ def generate():
         objs = []
         found_count = 0
         prefix = data_dict["prefix"]
-        # Natural sorting of IDs (numerical if possible)
         keys = sorted(data_dict["data"].keys(), key=lambda x: (int(re.sub(r'\D', '', str(x))), str(x)))
-        
         
         print(" ")
         print("==============")
@@ -832,12 +823,10 @@ def generate():
                 found_count += 1
                 thumb, date = make_thumbnail(img_file), get_exif_date(img_file)
             
-            # Calculation of maximum elevation and best season
             ra, dec = info[6], info[7]
             h_max = 90 - abs(CONFIG["LATITUDE"] - dec)
             season_computed = compute_best_season(ra)
 
-            # Color coding based on height above the horizon
             color = "#c9d1d9" 
             if h_max <= CONFIG["LIMIT_IMPOSSIBLE"]: color = "#da3633" 
             elif h_max <= CONFIG["LIMIT_DIFFICILE"]: color = "#ff9f43" 
@@ -857,15 +846,12 @@ def generate():
                 "todo_comment": marked_dict.get(str(k), "")
             })
             
-            
         final_json[name] = objs
         stats[name] = f"{found_count}/{len(data_dict['data'])}"
 
-    # Preparation of dropdown menu options
     select_options = "".join([f'<option value="{c}" {"selected" if c == CONFIG["SELECTED_CATALOG"] else ""}>{c}</option>' for c in CATALOGS.keys()])
     season_options = "".join([f'<option value="{val}">{val}</option>' for val in LANG["SEASONS"].values()])
     dir_options = f'<option value="Tous">{LANG["ALL_DIR"]}</option><option value="{LANG["NORTH"]}">{LANG["NORTH"]}</option><option value="{LANG["SOUTH"]}">{LANG["SOUTH"]}</option>'
-
     family_options = f"""
         <option value="Tous">{LANG['FAMILIES_LABELS']['ALL']}</option>
         <option value="Nébuleuse">{LANG['FAMILIES_LABELS']['NEB']}</option>
@@ -893,23 +879,28 @@ def generate():
                 background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
                 background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 10px auto;
             }}
-            .filter-select:hover, .filter-select:focus {{ 
-                border-color: #388bfd; background-color: #2a3039; box-shadow: 0 0 0 2px rgba(56, 139, 253, 0.3);
-            }}
             .btn-export {{ 
                 position: fixed; top: 10px; right: 10px; z-index: 1000;
                 background: #161b22; border: 1px solid #30363d; color: #8b949e;
                 padding: 6px 12px; border-radius: 6px; font-size: 11px;
-                cursor: pointer; transition: 0.2s; background-image: none;
+                cursor: pointer; transition: 0.2s;
             }}
             .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--case-size), 1fr)); gap: 15px; width: 100%; margin: 0 auto; }}
             .case {{ background: #161b22; border-radius: 8px; border: 1px solid #30363d; overflow: hidden; position: relative; display: flex; flex-direction: column; }}
+            
+            /* Gestion des coeurs - Taille identique */
             .todo-heart {{ 
                 position: absolute; top: 5px; right: 8px; 
                 font-size: 20px; z-index: 10; 
                 user-select: none; pointer-events: none;
+                color: #ff4d4d;
+                line-height: 1;
             }}
-            .todo-heart::before {{ content: "❤️"; }}
+            .todo-heart.no-comment {{ 
+                color: transparent;
+                -webkit-text-stroke: 1.5px #ff4d4d;
+            }}
+
             .img-box {{ width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; background: #000; cursor: pointer; overflow: hidden; }}
             .img-box img {{ width: 100%; height: 100%; object-fit: cover; }}
             .empty-info {{ color: #484f58; font-size: 11px; font-weight: bold; text-align: center; padding: 5px; line-height: 1.2; }}
@@ -918,14 +909,11 @@ def generate():
             #overlay {{ display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; overflow: hidden; }}
             #fullImg {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: grab; user-select: none; max-width: 95%; max-height: 95%; transition: transform 0.05s linear; }}
             
-            /* Custom Prompt Modal without Cancel Button */
             #customPrompt {{ background: #161b22; color: #fff; border: 1px solid #388bfd; border-radius: 8px; padding: 15px; box-shadow: 0 8px 24px #000; max-width: 300px; text-align: center; }}
             #customPrompt::backdrop {{ background: rgba(0,0,0,0.6); }}
             #customPrompt label {{ display: block; font-size: 13px; margin-bottom: 10px; color: #c9d1d9; }}
             #customPrompt input {{ background: #0d1117; color: #fff; border: 1px solid #30363d; border-radius: 4px; padding: 6px; width: 90%; margin-bottom: 12px; outline: none; }}
-            #customPrompt input:focus {{ border-color: #388bfd; }}
             #customPrompt button {{ background: #21262d; border: 1px solid #388bfd; color: #fff; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-size: 13px; }}
-            #customPrompt button:hover {{ background: #2a3039; }}
         </style>
     </head>
     <body>
@@ -951,7 +939,6 @@ def generate():
         <div id="tooltip"></div>
         <div id="overlay" onclick="if(event.target===this) closeM()"><img id="fullImg"></div>
 
-        <!-- Custom single button prompt template -->
         <dialog id="customPrompt">
             <form method="dialog" id="promptForm">
                 <label>Entrez une description optionnelle :</label>
@@ -962,28 +949,22 @@ def generate():
         </dialog>
 
         <script>
-            // Data injected by Python
             const data = {json.dumps(final_json)};
             const stats = {json.dumps(stats)};
             const prefixes = {json.dumps(prefixes_js)};
             const thumbDir = "{CONFIG['THUMB_DIR']}";
             const userLat = {CONFIG['LATITUDE']}; 
             
-            // Local storage setup with strict file synchronization override
+            // Sync local storage with JSON data on load
             let localTodo = JSON.parse(localStorage.getItem('astro_todo')) || {{}};
             for (let cat in data) {{
                 if (!localTodo[cat]) localTodo[cat] = {{}};
-                
                 data[cat].forEach(obj => {{
-                    // If object is flagged as todo in python file, overwrite or create local description
-                    if (obj.todo) {{
-                        localTodo[cat][obj.id] = obj.todo_comment || "";
-                    }}
+                    if (obj.todo) {{ localTodo[cat][obj.id] = obj.todo_comment || ""; }}
                 }});
             }}
             localStorage.setItem('astro_todo', JSON.stringify(localTodo));
 
-            // Grouping by object families
             const FAMILIES = {{
                 "Nébuleuse": ["{LANG['TYPES']['N']}", "{LANG['TYPES']['NP']}", "{LANG['TYPES']['SC']}", "{LANG['TYPES']['SNR']}", "{LANG['TYPES']['EN']}", "{LANG['TYPES']['RN']}", "{LANG['TYPES']['E/RN']}", "{LANG['TYPES']['N+C']}"],
                 "Galaxie": ["{LANG['TYPES']['G']}"],
@@ -994,12 +975,10 @@ def generate():
             let scale = 1, posX = 0, posY = 0, isDragging = false, startX, startY;
             const m = document.getElementById("overlay"), mi = document.getElementById("fullImg"), t = document.getElementById('tooltip');
 
-            // Filtering functions
             function filterS(s) {{ currentSeason = s; update(); }}
             function filterD(d) {{ currentDir = d; update(); }}
             function filterF(f) {{ currentFamily = f; update(); }}
 
-            // Generation of the TODO.txt file in JSON format
             function exportTodo() {{
                 const blob = new Blob([JSON.stringify(localTodo, null, 4)], {{type: 'text/plain'}});
                 const url = window.URL.createObjectURL(blob);
@@ -1008,7 +987,6 @@ def generate():
                 window.URL.revokeObjectURL(url);
             }}
 
-            // Right-click management (red heart) via non-cancelable modal dialog
             function toggleHeart(e, catName, objId) {{
                 e.preventDefault(); 
                 if (!localTodo[catName]) localTodo[catName] = {{}};
@@ -1021,10 +999,8 @@ def generate():
                     const dialog = document.getElementById('customPrompt');
                     const form = document.getElementById('promptForm');
                     const input = document.getElementById('promptInput');
-                    
                     input.value = ""; 
                     dialog.showModal();
-                    
                     form.onsubmit = () => {{
                         localTodo[catName][objId] = input.value.trim();
                         localStorage.setItem('astro_todo', JSON.stringify(localTodo));
@@ -1034,7 +1010,6 @@ def generate():
                 return false;
             }}
 
-            // Updating the grid display
             function update() {{
                 const cat = document.getElementById('catSelect').value;
                 const g = document.getElementById('grid'); 
@@ -1049,13 +1024,11 @@ def generate():
                     const declin = parseFloat(obj.info[7]);
                     const objDir = declin > userLat ? "{LANG['NORTH']}" : "{LANG['SOUTH']}";
                     
-                    // Filter application
                     if (currentFamily !== 'Tous' && !(FAMILIES[currentFamily] && FAMILIES[currentFamily].includes(objType))) return;
                     if (currentSeason !== 'Tous' && objSeason !== currentSeason) return;
                     if (currentDir !== 'Tous' && objDir !== currentDir) return;
                     
                     const d = document.createElement('div'); d.className = 'case';
-                    
                     const isTodo = localTodo[cat] && localTodo[cat][obj.id] !== undefined;
                     const currentComment = isTodo ? localTodo[cat][obj.id] : "";
                     
@@ -1063,12 +1036,12 @@ def generate():
                     d.onmouseleave = () => t.style.display='none';
                     d.oncontextmenu = (e) => toggleHeart(e, cat, obj.id);
                     
-                    const heart = isTodo ? '<div class="todo-heart"></div>' : '';
+                    const heartClass = currentComment ? 'has-comment' : 'no-comment';
+                    const heart = isTodo ? `<div class="todo-heart ${{heartClass}}">❤</div>` : '';
 
                     let displaySeason = currentSeason === 'Tous' ? `<br>(${{objSeason}})` : '';
                     let content = obj.thumb ? `<img src="${{obj.thumb}}">` : `<div class="empty-info">${{objType}}${{displaySeason}}</div>`;
                     
-                    // High-resolution image management (JPG generated if source is TIF)
                     let clickImg = obj.img;
                     if (obj.img && (obj.img.toLowerCase().endsWith('.tif') || obj.img.toLowerCase().endsWith('.tiff'))) {{
                         let baseName = obj.img.substring(0, obj.img.lastIndexOf('.'));
@@ -1076,7 +1049,7 @@ def generate():
                         clickImg = thumbDir + "/view_" + baseName + ".jpg";
                     }}
                     
-                    // Construction of the Telescopius link
+                    // Telescopius Link Generation
                     let tUrl = "https://telescopius.com/deep-sky-objects/";
                     if (obj.prefix === prefixes.Messier) tUrl += "m-" + obj.id;
                     else if (obj.prefix === prefixes.Caldwell) tUrl += "c-" + obj.id;
@@ -1100,17 +1073,16 @@ def generate():
                 }});
             }}
 
-            // Fullscreen viewer
             function openM(s) {{ if(!s) return; scale = 1; posX = 0; posY = 0; mi.src = s; m.style.display = "flex"; updateTransform(); }}
             function closeM() {{ m.style.display = "none"; }}
             function updateTransform() {{ mi.style.transform = `translate(calc(-50% + ${{posX}}px), calc(-50% + ${{posY}}px)) scale(${{scale}})`; }}
             
+            // Image viewer pan & zoom
             m.addEventListener('wheel', e => {{ e.preventDefault(); scale = Math.min(Math.max(0.5, scale * (e.deltaY > 0 ? 0.9 : 1.1)), 10); updateTransform(); }}, {{passive: false}});
             mi.addEventListener('mousedown', e => {{ isDragging = true; startX = e.clientX - posX; startY = e.clientY - posY; e.preventDefault(); }});
             window.addEventListener('mousemove', e => {{ if (isDragging) {{ posX = e.clientX - startX; posY = e.clientY - startY; updateTransform(); }} }});
             window.addEventListener('mouseup', () => isDragging = false);
 
-            // Information tooltip on hover
             function showT(e, obj, comment) {{
                 let html = "";
                 if (obj.img) {{
@@ -1119,7 +1091,7 @@ def generate():
                     html += `<hr style="border:0; border-top:1px solid #444; margin:8px 0;">`;
                 }}
                 
-                // Detection of objects "too small" for the focal length
+                // Small object detection logic
                 let s = obj.info[4] || "", c = "", threshold = {limit_small}; 
                 let dims = s.split(/[x×]/), isSmall = dims.length > 0;
                 for (let i = 0; i < dims.length; i++) {{
@@ -1132,6 +1104,7 @@ def generate():
                 }}
                 if (isSmall) c = ' style="color:orange;"';
 
+                // Direction and badge calculation
                 const declin = parseFloat(obj.info[7]), isNorth = declin > userLat;
                 const direction = isNorth ? "{LANG['NORTH']}" : "{LANG['SOUTH']}";
                 const badgeColor = isNorth ? "#3498db" : "#f1c40f";
@@ -1142,29 +1115,14 @@ def generate():
                 html += `<div><strong>{LANG["TOOLTIP_LABELS"]["MAGNITUDE"]}:</strong> ${{obj.info[3]}}</div>`;
                 html += `<div ${{c}}><strong>{LANG["TOOLTIP_LABELS"]["SIZE"]}:</strong> ${{s}}</div>`;
                 
+                // RA conversion to HMS
                 let raDecimal = parseFloat(obj.info[6]);
+                let hours = Math.floor(raDecimal), minDec = (raDecimal - hours) * 60, minutes = Math.floor(minDec), seconds = Math.round((minDec - minutes) * 60);
+                if (seconds === 60) {{ seconds = 0; minutes += 1; }}
+                if (minutes === 60) {{ minutes = 0; hours += 1; }}
 
-                let hours = Math.floor(raDecimal);
-                let minutesDecimal = (raDecimal - hours) * 60;
-                let minutes = Math.floor(minutesDecimal);
-                let seconds = Math.round((minutesDecimal - minutes) * 60);
-
-                if (seconds === 60) {{
-                    seconds = 0;
-                    minutes += 1;
-                }}
-                if (minutes === 60) {{
-                    minutes = 0;
-                    hours += 1;
-                }}
-
-                let hoursStr = hours + 'h';
-                let minutesStr = String(minutes).padStart(2, '0') + 'm';
-                let secondsStr = String(seconds).padStart(2, '0') + 's';
-                
-                html += `<div><strong>RA :</strong> ${{hoursStr}} ${{minutesStr}} ${{secondsStr}}</div>`;
-                html += `<div><strong>Dec :</strong> <span  color:#c9d1d9;">${{obj.info[7]}}°</span> `;
-                html += `<span style="font-size:9px; background:#21262d; color:${{badgeColor}}; padding:1px 4px; border-radius:3px; border:1px solid ${{badgeColor}}; margin-left:5px; vertical-align:middle; font-weight:bold;">${{direction}}</span></div>`;
+                html += `<div><strong>RA :</strong> ${{hours}}h ${{String(minutes).padStart(2, '0')}}m ${{String(seconds).padStart(2, '0')}}s</div>`;
+                html += `<div><strong>Dec :</strong> ${{obj.info[7]}}° <span style="font-size:9px; background:#21262d; color:${{badgeColor}}; padding:1px 4px; border-radius:3px; border:1px solid ${{badgeColor}}; margin-left:5px; vertical-align:middle; font-weight:bold;">${{direction}}</span></div>`;
                 html += `<div><strong>{LANG["TOOLTIP_LABELS"]["ELEVATION"]}:</strong> ${{obj.h_max}}</div>`;
                 
                 if (comment) {{
