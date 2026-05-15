@@ -58,34 +58,10 @@ Once done, the note will appear in tooltip
 As the browsers have a cache where is stored persistent data, the list of your favorite objects including the notes is persistent as long as you do not change your browser and you do not empty the cache. But there is a way to permanently store this list inside a TODO.txt file. When clicking on the upper right icon, the file is created and stored into your browser "uploads" diectory. You have to drag and drop this file into the image and script folder to get it recognized at next startup. The file can be manually edited to add/remove hearts and comments (be carefull with the syntax) !
 here is an example:
 
-{
-    "Messier": {
-        "97": "shoot it together with M108",
-        "98": "",
-        "108": "to do with M97"
-    },
-    "Caldwell": {
-        "33": "",
-        "34": "",
-        "68": ""
-    },
-    "RASC": {
-        "95": "",
-        "99a": "",
-        "99b": ""
-    },
-    "O'Meara": {
-        "33": "",
-        "36": "",
-        "1081": "",
-        "1082": "",
-        "1090": "",
-        "1097": ""
-    }
-}
+<img width="364" height="419" alt="cata_edit_todo" src="https://github.com/user-attachments/assets/0a6e51e5-3213-4535-9dcf-d157e777139e" />
 
 
-you can edit the python file and change this value
+you can also edit the python file and change this value
 -    "LIMIT_SMALL_OBJECT": 120                     # arcseconds ; paint small objects size in orange
 
 you can edit the python file and change those lines according to your location :
@@ -93,7 +69,7 @@ you can edit the python file and change those lines according to your location :
 -   "LIMIT_IMPOSSIBLE": 0,                          # degrees : change here if your horizon is masked
 -   "LIMIT_DIFFICILE": 20
 
-You can easily translate the script in any langage as all strings are gathered at the top of the script... Meanwhile in french ! For the catalogs of objects, an english version is already available in the file "English_databases.txt", edit the .py file and replace the databses section by the english translation.
+You can easily translate the script in any langage as all strings are gathered at the top of the script... Meanwhile in french ! For the catalogs of objects, an english version is already available in the file "English_databases.txt", edit the .py file and replace the databases section by the english translation.
 
 
 Let me know if it works for you too and if you see any improvements we could make!
