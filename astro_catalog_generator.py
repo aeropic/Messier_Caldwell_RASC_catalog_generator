@@ -7,9 +7,11 @@
 # https://www.catchersofthelight.com/astrophotography-hidden-treasures-list.aspx
 # https://app.astrobin.com/u/GaryI?collection=677&i=esls3b#gallery
 #
+#   V4.3 : a free comment can be added when loving an object. 
+#          TODO.txt can be edited as well to manually add single line comments
 #   V4.2 : tooltip labels in LANG dictionnary
 #   V4.1 : season is computed from RA value. RA added in database
-#   V4.0.1 : added fex comments all in english
+#   V4.0.1 : added few comments all in english
 #   V4.0 : added selection of todo objects (red heart) and export of TODO.txt
 #   V3.1 : huge mod in hidden treasures!
 #   V3.0 : added O'Meara lists (secret deep and hidden treasures)
@@ -343,7 +345,7 @@ CALDWELL_DATA = {
     109: [T["NP"], "NGC 3195", "Caméléon", "10.6", "15''", "NGC 3195", 10.16, -81.2]
 }
 
-# --- Format: [Type, Season, Constellation, Mag, Size, Common Name, RA, Dec, Tech_Ref]
+
 
 RASC_DATA = {
     1: [T["NP"], "NGC 7009", "Verseau", "8.3", "25''", "Nébuleuse Saturne", 21.07, -11.4],
@@ -699,7 +701,6 @@ TODO_FILE = "TODO.txt"
 
 def compute_best_season(ra):
     """Calculates the best observation season based on Right Ascension (RA)"""
-    # Version initiale : plus fidèle aux catalogues Messier classiques
     if 3 <= ra < 9:
         return LANG["SEASONS"]["H"] # Hiver
     elif 9 <= ra < 15:
@@ -795,7 +796,8 @@ def load_todo_list():
     try:
         with open(TODO_FILE, "r", encoding="utf-8") as f:
             content = f.read().strip()
-            return json.loads(content) if content else {}
+            if not content: return {}
+            return json.loads(content)
     except Exception as e:
         print(f"Error reading TODO.txt : {e}")
         return {}
@@ -808,12 +810,13 @@ def generate():
     prefixes_js = {k: v["prefix"] for k, v in CATALOGS.items()}
     
     for name, data_dict in CATALOGS.items():
-        marked_ids = todo_list.get(name, [])
+        marked_dict = todo_list.get(name, {})
         objs = []
         found_count = 0
         prefix = data_dict["prefix"]
         # Natural sorting of IDs (numerical if possible)
         keys = sorted(data_dict["data"].keys(), key=lambda x: (int(re.sub(r'\D', '', str(x))), str(x)))
+        
         
         print(" ")
         print("==============")
@@ -850,8 +853,10 @@ def generate():
                 "h_max": round(h_max, 1),
                 "season_computed": season_computed,
                 "label_color": color,
-                "todo": str(k) in [str(i) for i in marked_ids]
+                "todo": str(k) in marked_dict,
+                "todo_comment": marked_dict.get(str(k), "")
             })
+            
             
         final_json[name] = objs
         stats[name] = f"{found_count}/{len(data_dict['data'])}"
@@ -901,9 +906,10 @@ def generate():
             .case {{ background: #161b22; border-radius: 8px; border: 1px solid #30363d; overflow: hidden; position: relative; display: flex; flex-direction: column; }}
             .todo-heart {{ 
                 position: absolute; top: 5px; right: 8px; 
-                color: #ff4d4d; font-size: 22px; cursor: pointer; 
-                z-index: 10; text-shadow: 0 0 4px #000; user-select: none;
+                font-size: 20px; z-index: 10; 
+                user-select: none; pointer-events: none;
             }}
+            .todo-heart::before {{ content: "❤️"; }}
             .img-box {{ width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; background: #000; cursor: pointer; overflow: hidden; }}
             .img-box img {{ width: 100%; height: 100%; object-fit: cover; }}
             .empty-info {{ color: #484f58; font-size: 11px; font-weight: bold; text-align: center; padding: 5px; line-height: 1.2; }}
@@ -911,6 +917,15 @@ def generate():
             #tooltip {{ position: fixed; display: none; background: #0d1117; border: 1px solid #3498db; border-radius: 8px; padding: 12px; z-index: 2000; text-align: left; min-width: 220px; box-shadow: 0 8px 24px #000; pointer-events: none; }}
             #overlay {{ display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; overflow: hidden; }}
             #fullImg {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: grab; user-select: none; max-width: 95%; max-height: 95%; transition: transform 0.05s linear; }}
+            
+            /* Custom Prompt Modal without Cancel Button */
+            #customPrompt {{ background: #161b22; color: #fff; border: 1px solid #388bfd; border-radius: 8px; padding: 15px; box-shadow: 0 8px 24px #000; max-width: 300px; text-align: center; }}
+            #customPrompt::backdrop {{ background: rgba(0,0,0,0.6); }}
+            #customPrompt label {{ display: block; font-size: 13px; margin-bottom: 10px; color: #c9d1d9; }}
+            #customPrompt input {{ background: #0d1117; color: #fff; border: 1px solid #30363d; border-radius: 4px; padding: 6px; width: 90%; margin-bottom: 12px; outline: none; }}
+            #customPrompt input:focus {{ border-color: #388bfd; }}
+            #customPrompt button {{ background: #21262d; border: 1px solid #388bfd; color: #fff; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-size: 13px; }}
+            #customPrompt button:hover {{ background: #2a3039; }}
         </style>
     </head>
     <body>
@@ -930,11 +945,21 @@ def generate():
             <select id="dirSelect" class="filter-select" onchange="filterD(this.value)">
                 {dir_options}
             </select>
-            <button onclick="exportTodo()" class="filter-select btn-export">💾 TODO.txt</button>
+            <button onclick="exportTodo()" class="filter-select btn-export">💾 TODO.txt ❤</button>
         </div>
         <div class="grid" id="grid"></div>
         <div id="tooltip"></div>
         <div id="overlay" onclick="if(event.target===this) closeM()"><img id="fullImg"></div>
+
+        <!-- Custom single button prompt template -->
+        <dialog id="customPrompt">
+            <form method="dialog" id="promptForm">
+                <label>Entrez une description optionnelle :</label>
+                <input type="text" id="promptInput" autocomplete="off">
+                <br>
+                <button type="submit">Valider</button>
+            </form>
+        </dialog>
 
         <script>
             // Data injected by Python
@@ -944,12 +969,16 @@ def generate():
             const thumbDir = "{CONFIG['THUMB_DIR']}";
             const userLat = {CONFIG['LATITUDE']}; 
             
-            // Initialization of the local TODO list
+            // Local storage setup with strict file synchronization override
             let localTodo = JSON.parse(localStorage.getItem('astro_todo')) || {{}};
             for (let cat in data) {{
-                if (!localTodo[cat]) localTodo[cat] = [];
+                if (!localTodo[cat]) localTodo[cat] = {{}};
+                
                 data[cat].forEach(obj => {{
-                    if (obj.todo && !localTodo[cat].includes(obj.id)) localTodo[cat].push(obj.id);
+                    // If object is flagged as todo in python file, overwrite or create local description
+                    if (obj.todo) {{
+                        localTodo[cat][obj.id] = obj.todo_comment || "";
+                    }}
                 }});
             }}
             localStorage.setItem('astro_todo', JSON.stringify(localTodo));
@@ -971,6 +1000,7 @@ def generate():
             function filterF(f) {{ currentFamily = f; update(); }}
 
             // Generation of the TODO.txt file in JSON format
+            // format is {"Catalog name": {"IdObjet": "free Comment"}}
             function exportTodo() {{
                 const blob = new Blob([JSON.stringify(localTodo, null, 4)], {{type: 'text/plain'}});
                 const url = window.URL.createObjectURL(blob);
@@ -979,15 +1009,29 @@ def generate():
                 window.URL.revokeObjectURL(url);
             }}
 
-            // Right-click management (red heart)
+            // Right-click management (red heart) via non-cancelable modal dialog
             function toggleHeart(e, catName, objId) {{
                 e.preventDefault(); 
-                if (!localTodo[catName]) localTodo[catName] = [];
-                const idx = localTodo[catName].indexOf(objId);
-                if (idx > -1) localTodo[catName].splice(idx, 1);
-                else localTodo[catName].push(objId);
-                localStorage.setItem('astro_todo', JSON.stringify(localTodo));
-                update();
+                if (!localTodo[catName]) localTodo[catName] = {{}};
+                
+                if (localTodo[catName][objId] !== undefined) {{
+                    delete localTodo[catName][objId];
+                    localStorage.setItem('astro_todo', JSON.stringify(localTodo));
+                    update();
+                }} else {{
+                    const dialog = document.getElementById('customPrompt');
+                    const form = document.getElementById('promptForm');
+                    const input = document.getElementById('promptInput');
+                    
+                    input.value = ""; 
+                    dialog.showModal();
+                    
+                    form.onsubmit = () => {{
+                        localTodo[catName][objId] = input.value.trim();
+                        localStorage.setItem('astro_todo', JSON.stringify(localTodo));
+                        update();
+                    }};
+                }}
                 return false;
             }}
 
@@ -1012,12 +1056,15 @@ def generate():
                     if (currentDir !== 'Tous' && objDir !== currentDir) return;
                     
                     const d = document.createElement('div'); d.className = 'case';
-                    d.onmousemove = (e) => showT(e, obj);
+                    
+                    const isTodo = localTodo[cat] && localTodo[cat][obj.id] !== undefined;
+                    const currentComment = isTodo ? localTodo[cat][obj.id] : "";
+                    
+                    d.onmousemove = (e) => showT(e, obj, currentComment);
                     d.onmouseleave = () => t.style.display='none';
                     d.oncontextmenu = (e) => toggleHeart(e, cat, obj.id);
                     
-                    const isTodo = localTodo[cat] && localTodo[cat].includes(obj.id);
-                    const heart = isTodo ? '<div class="todo-heart">❤</div>' : '';
+                    const heart = isTodo ? '<div class="todo-heart"></div>' : '';
 
                     let displaySeason = currentSeason === 'Tous' ? `<br>(${{objSeason}})` : '';
                     let content = obj.thumb ? `<img src="${{obj.thumb}}">` : `<div class="empty-info">${{objType}}${{displaySeason}}</div>`;
@@ -1065,7 +1112,7 @@ def generate():
             window.addEventListener('mouseup', () => isDragging = false);
 
             // Information tooltip on hover
-            function showT(e, obj) {{
+            function showT(e, obj, comment) {{
                 let html = "";
                 if (obj.img) {{
                     html += `<div style="color:#4a9eff; font-weight:bold; font-size:12px; margin-bottom:2px;">${{obj.img}}</div>`;
@@ -1103,7 +1150,6 @@ def generate():
                 let minutes = Math.floor(minutesDecimal);
                 let seconds = Math.round((minutesDecimal - minutes) * 60);
 
-                // Gestion du cas où l'arrondi des secondes pousse les minutes à 60
                 if (seconds === 60) {{
                     seconds = 0;
                     minutes += 1;
@@ -1113,7 +1159,6 @@ def generate():
                     hours += 1;
                 }}
 
-                // Formatage avec ajout de zéros initiaux si nécessaire (ex: 05m)
                 let hoursStr = hours + 'h';
                 let minutesStr = String(minutes).padStart(2, '0') + 'm';
                 let secondsStr = String(seconds).padStart(2, '0') + 's';
@@ -1122,6 +1167,12 @@ def generate():
                 html += `<div><strong>Dec :</strong> <span  color:#c9d1d9;">${{obj.info[7]}}°</span> `;
                 html += `<span style="font-size:9px; background:#21262d; color:${{badgeColor}}; padding:1px 4px; border-radius:3px; border:1px solid ${{badgeColor}}; margin-left:5px; vertical-align:middle; font-weight:bold;">${{direction}}</span></div>`;
                 html += `<div><strong>{LANG["TOOLTIP_LABELS"]["ELEVATION"]}:</strong> ${{obj.h_max}}</div>`;
+                
+                if (comment) {{
+                    html += `<hr style="border:0; border-top:1px solid #ff4d4d; margin:8px 0;">`;
+                    html += `<div style="color:#ff6b6b; font-size:12px;"><strong>Note :</strong> ${{comment}}</div>`;
+                }}
+
                 html += `<hr style="border:0; border-top:1px solid #444; margin:8px 0;">`;
                 html += `<div style="font-style:italic; color:#3498db; margin-top:5px;"><strong>${{obj.info[5]}}</strong></div>`;
                 
