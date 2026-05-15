@@ -68,6 +68,10 @@ When preparing some observations sessions, it may be usefull to tag the objects 
 Once done, the note will appear in tooltip
 <img width="1029" height="681" alt="cata_note" src="https://github.com/user-attachments/assets/f060caad-9947-4c6c-a1c6-cc2f80ee3ebd" />
 
+In addition, to increase visibility, objects tagged and with a note will appear with a filled heart while objects tagged but without note will be displayed witha hollow heart.
+<img width="458" height="307" alt="cata_hollow_heart" src="https://github.com/user-attachments/assets/fc3e8556-d3f7-4038-8d8b-669e651be1f4" />
+
+
 ### the TODO.txt file 
 
 As the browsers have a cache where is stored persistent data, the list of your favorite objects including the notes is persistent as long as you do not change your browser and you do not empty the cache. But there is a way to permanently store this list inside a TODO.txt file. When clicking on the upper right icon with a floppy disk, the file is created and stored into your browser "uploads" diectory. You have to drag and drop this file into the image and script folder to get it recognized at next startup. The file can be manually edited to add/remove hearts and comments (be carefull with the syntax) !
