@@ -4,7 +4,7 @@ This is a python script to build a catalog of your Messier/Caldwell/RASC/O'Meara
 After the Messier, the Caldwell, the RASC catalogs, I needed to simplify all this and make a commun generic one : here it is including O'meara's "hidden treasures" and "secret deep" lists.
 This project is a technical tool for observers. For detailed descriptions, history, and charts of the O'Meara objects, users are highly encouraged to purchase Stephen James O'Meara's books 'Hidden Treasures' and 'The Secret Deep' published by Cambridge University Press.
 
-usage:
+## usage:
 Simply organize your image files in a folder and add the string "M1, Mxx, C1, Cx or NGCxyz or ICabc" to the image names.
 The script is able to manage files in .jpg, .jpeg, .png, .webp, .tif, .tiff and .lnk (window shortcut to image).
 
@@ -13,9 +13,10 @@ If there are multiple objects in the same image, name the file with both objects
 
 <img width="1317" height="846" alt="cata" src="https://github.com/user-attachments/assets/b41ce7cf-49e7-4031-b952-cd606bdb0e34" />
 
-
-
 thumbnails are created and stored into a "thumbnails" folder
+
+## main functionalities
+
 The script includes a mini-catalog, and the object type is indicated below the object number. 
 The thumbnails on the HTML page are clickable to access the zoomable image.
 The marathon score is displayed at the top .
