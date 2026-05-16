@@ -24,6 +24,7 @@ If there are multiple objects in the same image, name the file with both objects
 
 thumbnails are created and stored into a "thumbnails" subfolder
 
+NOTE : don't worry if you only see here screenshots in French, the english version is available (see at the end of this page)
 
 ## main functionalities
 
@@ -89,9 +90,13 @@ you can edit the python file and change those lines according to your location :
 -   "LIMIT_IMPOSSIBLE": 0,                          # degrees : change here if your horizon is masked
 -   "LIMIT_DIFFICILE": 20
 
-## translation in english or other langage
-You can easily translate the script in any langage as all strings are gathered at the top of the script... Meanwhile in french ! 
-For the catalogs of objects, an english version is already available in the file "English_databases.txt", edit the .py file and replace the databases section by the english translation. If you're lazy, ask Gemini AI to do this job for you ...
+## translation in english or other language
+You can easily translate the script in any langage as all strings are gathered in a separate file named "LANG_database.py". Place this file in the same directory as the script and all screens will be in english, remove this file and the default French language will be used.
+
+<img width="946" height="543" alt="cata_EN" src="https://github.com/user-attachments/assets/702b9627-89ba-4004-b558-17dc720d626c" />
+
+For other languages, just translate the strings into your language, save the file as "LANG_database.py". If you're lazy, ask Gemini AI to do this job for you ...
+(Should you do this, I would appreciate if you could provide me with the translated file)
 
 ## bottom line 
 Let me know if it works for you too and if you see any improvements we could make!
