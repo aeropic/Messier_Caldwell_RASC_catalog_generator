@@ -84,6 +84,7 @@ here is an example:
 ## smart Tooltip and  visible objects of the day
 
 Since version V5.1, in the tooltip there is a plot of object altitude curve for the coming night. The curve is painted in yellow for South objects and blue for North ones.
+The horizontal dot green line is at 30°.
 The curve is centered on the night duration. Progessive light blue to black background are the dates of sunset, successive penumbras, then dark night, successive penumbras, sunrise up to day light blue again.
 
 <img width="559" height="556" alt="cata_tooltip_curve" src="https://github.com/user-attachments/assets/ee37bd8d-25b6-4c2e-8270-2956f4848770" />
