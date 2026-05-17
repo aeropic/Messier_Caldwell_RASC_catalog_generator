@@ -34,7 +34,7 @@ LANG = {
         "GAL": "galaxias",
         "CLU": "cúmulos y otros",
     },
-    "SEASONS": {"P": "Primavera", "E": "Verano", "A": "Otoño", "H": "Invierno"},
+    "SEASONS": {"P": "Primavera", "E": "Verano", "A": "Otoño", "H": "Invierno", "TN": "Tonight"},     {"P": "Spring", "E": "Summer", "A": "Automn", "H": "Winter"; "TN": "Tonight"},
     "TOOLTIP_LABELS": {
         "TYPE": "Tipo ",
         "SEASON": "Estación ",

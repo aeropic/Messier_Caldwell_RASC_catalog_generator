@@ -34,7 +34,7 @@ LANG = {
         "GAL": "Galaxies",
         "CLU": "clusters and others",
     },
-    "SEASONS": {"P": "Spring", "E": "Summer", "A": "Automn", "H": "Winter"},
+    "SEASONS": {"P": "Spring", "E": "Summer", "A": "Automn", "H": "Winter", "TN": "Tonight"},
     "TOOLTIP_LABELS": {
         "TYPE": "Type ",
         "SEASON": "Season ",
